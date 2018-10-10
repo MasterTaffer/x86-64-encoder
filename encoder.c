@@ -9,14 +9,6 @@
 #include <string.h>
 #include <sys/mman.h>
 
-
-/*
-	Naming conventions:
-
-	If opcode name ends with MODRM, it uses ModR/M byte for operand encoding.
-*/
-
-
 // Primary register definitions
 
 #define X86_REG_A (0) 
@@ -35,7 +27,6 @@
 #define X86_REG_R13 (13)
 #define X86_REG_R14 (14)
 #define X86_REG_R15 (15)
-
 
 // Condition definitions
 
@@ -76,6 +67,7 @@
 #define X86_COND_G (15)
 
 // Opcode definitions
+// ModR/M instructions use the ModR/M field for operands
 #define X86_ADD_MODRM (0x01)
 #define X86_OR_MODRM (0x09)
 #define X86_ADC_MODRM (0x11)
@@ -98,7 +90,6 @@
 
 #define X86_JMP_COND_REL8(x) (0x70 + (x))
 
-
 #define X86_0F (0x0F)
 #define X86_0F_JMP_COND_REL32(x) (0x80 + (x))
 
@@ -106,6 +97,12 @@
 #define X86_NOP (0x90)
 
 #define X86_OPERAND_SIZE_OVERRIDE (0x66)
+
+// These instructions use the ModR/M reg field for instruction identification
+// These also all are unary operations, so only R/M field is used for operand
+// identification
+// For example to encode CALL RCX, the initial opcode is 0xFF and reg field in
+// ModR/M is set to 0x2. R/M field must be then set to 0x01
 
 #define X86_FF_MODRM (0xFF)
 #define X86_FF_MODRM_CALL (0x2)
@@ -154,7 +151,8 @@ struct x86_relocation
 {
 	size_t offset; //Offset of relocation in bytecode
 	int label; //Label to relocate to
-	int relative; //Whether relocation is absolute or relative
+	int relative; //Whether relocation is absolute or relative.
+	//Also determines if address is 64bit (absolute) or 32bit (relative)
 };
 
 
@@ -242,11 +240,13 @@ int x86_encoder_apply_relocations_in_memory(struct x86_encoder* enc, char* t_buf
 			return 1;
 		intptr_t to = (intptr_t) (enc->labels[label]);
 		if (reloc->relative) {
+			//assume relative offsets are 32bit
 			intptr_t from = (intptr_t) (reloc->offset + 4);
 			int32_t* offset = (int32_t*)(t_buffer + reloc->offset);
 			int32_t rel = to - from;
 			(*offset) = rel;
 		} else {
+			//assume absolute addresses are 64bit
 			uint64_t* offset = (uint64_t*)(t_buffer + reloc->offset);
 			(*offset) = base + to;
 		}
@@ -283,7 +283,7 @@ void _x86_encoder_prepare_modrm_rex(struct x86_encoder* enc, char opcode, char r
 }
 
 
-
+// Generic ModR/M based instruction encoder
 void x86_encoder_write_modrm_rex(struct x86_encoder* enc, char opcode, char rm, char reg, int wide)
 {
 	x86_encoder_check_buffer(enc, 3);
@@ -302,10 +302,8 @@ void x86_encoder_write_jmp(struct x86_encoder* enc, int call, size_t label)
 	else
 		opcode = X86_JMP_REL32;
 	
-	
 	ENC_X(enc, 0) = opcode;
-	ENC_ADVANCE(enc, 1);
-	
+	ENC_ADVANCE(enc, 1);	
 	
 	*(uint32_t*)(enc->buffer + enc->buffer_size) = 0;
 	
@@ -458,8 +456,6 @@ int main(int argc, const char** argv)
 	size_t label_end = x86_encoder_add_label(&enc);
 
 	//input argument is in RDI
-	//initialize values
-
 	//zero rax and set low byte to 0x01
 	x86_encoder_write_modrm(&enc, X86_XOR_MODRM ,X86_REG_A, X86_REG_A);
 	x86_encoder_write_mov_imm_8(&enc, X86_REG_A, 0x01);
