@@ -139,9 +139,9 @@
 
 struct x86_modrm
 {
-	int rm : 3;
-	int reg : 3;
-	int mod : 2;
+	unsigned rm : 3;
+	unsigned reg : 3;
+	unsigned mod : 2;
 } __attribute__((packed));
 
 
@@ -150,7 +150,7 @@ struct x86_modrm
 struct x86_relocation
 {
 	size_t offset; //Offset of relocation in bytecode
-	int label; //Label to relocate to
+	size_t label; //Label to relocate to
 	int relative; //Whether relocation is absolute or relative.
 	//Also determines if address is 64bit (absolute) or 32bit (relative)
 };
