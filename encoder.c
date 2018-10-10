@@ -330,7 +330,7 @@ void x86_encoder_write_jmp_cond(struct x86_encoder* enc, int cond, size_t label)
 
 void x86_encoder_write_jmp_reg(struct x86_encoder* enc, int call, char reg)
 {
-	x86_encoder_write_modrm_rex(enc, X86_FF_MODRM, reg, call ? X86_FF_MODRM_CALL : X86_FF_MODRM_JMP, 1);
+	x86_encoder_write_modrm_rex(enc, X86_FF_MODRM, reg, call ? X86_FF_MODRM_CALL : X86_FF_MODRM_JMP, 0);
 }
 
 void x86_encoder_write_cmp_reg(struct x86_encoder* enc, char reg_1, char reg_2)
