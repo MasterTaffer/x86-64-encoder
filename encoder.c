@@ -499,7 +499,7 @@ int main(int argc, const char** argv)
 
 	//and test
 	for (int i = 0; i < 15; i++) {
-		printf("func(%d) == %d\n", i, func(i));
+		printf("func(%d) == %ld\n", i, func(i));
 	}
 
 	munmap(target_mem, enc.buffer_size);
