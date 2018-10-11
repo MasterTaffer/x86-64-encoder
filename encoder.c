@@ -77,6 +77,19 @@
 #define X86_XOR_MODRM (0x31)
 #define X86_CMP_MODRM (0x39)
 
+#define X86_OP_IMM8_MODRM (0x80)
+#define X86_OP_IMM_MODRM (0x81)
+#define X86_OP_LONG_IMM8_MODRM (0x82)
+
+#define X86_OP_MODRM_ADD (0x01)
+#define X86_OP_MODRM_OR (0x02)
+#define X86_OP_MODRM_ADC (0x03)
+#define X86_OP_MODRM_SBB (0x04)
+#define X86_OP_MODRM_AND (0x05)
+#define X86_OP_MODRM_SUB (0x06)
+#define X86_OP_MODRM_XOR (0x07)
+#define X86_OP_MODRM_CMP (0x08)
+
 #define X86_MOV_MODRM (0x89)
 
 #define X86_MOV_REG_IMM_LONG(x) (0xB8 + (x))
@@ -105,10 +118,14 @@
 // ModR/M is set to 0x2. R/M field must be then set to 0x01
 
 #define X86_FF_MODRM (0xFF)
+#define X86_FF_MODRM_INC (0x0)
+#define X86_FF_MODRM_DEC (0x1)
 #define X86_FF_MODRM_CALL (0x2)
 #define X86_FF_MODRM_JMP (0x4)
 
 #define X86_F7_MODRM (0xF7)
+#define X86_F7_MODRM_NOT (0x2)
+#define X86_F7_MODRM_NEG (0x3)
 #define X86_F7_MODRM_MUL (0x4)
 #define X86_F7_MODRM_IMUL (0x5)
 #define X86_F7_MODRM_DIV (0x6)
@@ -460,9 +477,6 @@ int main(int argc, const char** argv)
 	x86_encoder_write_modrm(&enc, X86_XOR_MODRM ,X86_REG_A, X86_REG_A);
 	x86_encoder_write_mov_imm_8(&enc, X86_REG_A, 0x01);
 
-	//copy from rax
-	x86_encoder_write_modrm(&enc, X86_MOV_MODRM ,X86_REG_R8, X86_REG_A);
-
 	//loop start label here
 	x86_encoder_move_label(&enc, label_start);
 
@@ -476,9 +490,8 @@ int main(int argc, const char** argv)
 	//ret = ret * p, single operand IMUL places result automatically to RAX
 	x86_encoder_write_modrm(&enc, X86_F7_MODRM, X86_REG_DI, X86_F7_MODRM_IMUL);
 
-	//immediate arithmetic isn't supported so we use another register for subtraction
-	//p -= 1,  R8 was initialized to 1
-	x86_encoder_write_modrm(&enc, X86_SUB_MODRM ,X86_REG_DI, X86_REG_R8);
+	//DEC RDI
+	x86_encoder_write_modrm(&enc, X86_FF_MODRM ,X86_REG_DI, X86_FF_MODRM_DEC);
 	//and jump to loop start
 	x86_encoder_write_jmp(&enc, 0, label_start);
 	//end label
